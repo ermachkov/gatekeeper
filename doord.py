@@ -6,7 +6,7 @@ from itertools import repeat
 import argparse
 from time import localtime
 from IPy import IP
-import dbus, syslog
+import dbus, syslog, re, subprocess
 from bazokle import ConnBase, GetCardsFromBase, CloseBase, getguestcards
 #import cx_Oracle
 #from bazokle import ConnBase, CloseBase
@@ -57,6 +57,7 @@ loglevel=0
 DBUSNAME="org.pop.p"
 DBUSOBJECT="/Popist"
 
+
 protocolversiondbus=13
 bNoDBus=0
 bNoCon=0
@@ -65,6 +66,8 @@ bNoSock=0
 parentpid=0
 
 verbosity=0
+
+expyears=15
 
 flagadd=0
 flagupdate=0
@@ -117,6 +120,7 @@ pre=(0xd,0xd,0,0,0,0,0,0,0,0,0,0)
 #                                                  12                            20 
 lst0=		  [0x20,0x20,0,0,0x66,0,0,0,0,0,0,0,0x93,0xbb,0x4c,0xd,0,0,2,0,0xff,0xff,0xff,0xff,0x0f,0,0,0]
 lst_addcard2010=  [0x20,0x10,0,0,0,0, 0,0,0,0,0,0, 0x93,0xbb,0x4c,0x0d, 0,0,2,0, 0xff,0xff,0xff,0xff]
+#lst_addcard2320=  [0x23,0x20,0,0,0,0, 0,0,0,0,0,0, 0x93,0xbb,0x4c,0x0d, 0,0,2,0, 1,2,3,4, 0,0,0,0,0xa0,0x4e,0x46,6,0x31,0x14,0xa1,0x20,0, 1,0,0,0,0,0,0]
 lst_addcard2320=  [0x23,0x20,0,0,0,0, 0,0,0,0,0,0, 0x93,0xbb,0x4c,0x0d, 0,0,2,0, 1,2,3,4, 0,0,0,0,0xa0,0x4e,0x46,6,0x31,0x14,0xa1,0x20,0, 1,0,0,0,0,0,0]
 lst_delete2310=   [0x23,0x10,0,0,0,0, 0,0,0,0,0,0, 0x93,0xbb,0x4c,0x0d, 0,0,2,0]
 lst_delete2120=   [0x21,0x20,0,0,0,0, 0,0,0,0,0,0, 0x93,0xbb,0x4c,0x0d, 0,0,2,0, 0,0xd0,0x4b,0,0xff,0xd3,0x4b,0]
@@ -125,7 +129,16 @@ lst_getcard2110_2=[0x21,0x10,0,0,0,0, 0,0,0,0,0,0, 0x93,0xbb,0x4c,0x0d, 0,0,2,0,
 lst_settime2030=  [0x20,0x30,0,0,0,0, 0,0,0,0,0,0, 0x93,0xbb,0x4c,0x0d, 0,0,2,0, 0x14,0x11,0x07,0x5, 0x11, 0x37, 0x25, 0xff] #2014 11 07 fri 11 37 25
 lst_seekctrl2440= [0x24,0x40,0,0,0,0, 0,0,0,0,0,0, 0xFF,0xFF,0xFF,0xFF, 0,0,2,0]
 lst_newip2520=    [0x25,0x20,0,0,0,0, 0,0,0,0,0,0, 0x93,0xbb,0x4c,0x0d, 0,0,2,0]
-
+lst_cfg2420=	  [0x24,0x20,0,0,0,0, 0,0,0,0,0,0, 0x93,0xbb,0x4c,0x0d, 0,0,2,0, 0xd,0x7e, 0xa,0,0x14,0,0x1e,0,0x1e,0, \
+ 3,3,3,3, 0,0,0,0, 1,2,3,4, 0,0,0,0, 0xff,0,0xff,0, 1,0,0x28,0, 0x08,0xfa,0,0x64,0,0xff,0x55,1,0x1e,0,0,0x7e,0x1e,0x1e, \
+ 0,0,0xff,0xff,0,0,0xff,0xff, 0,0,0,0,0,4,0x32,0, 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x84,0x94,0xff,0xff, \
+ 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff, \
+ 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xc0,0xa8,0,0,0xff,0xff,0,0,0xc0,0xa8,0,0, \
+ 0x60,0xea,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0x0d,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, \
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0xff,0xff,0xff,0xff,0xff,0x49,0xee,0x4a,0xee,0,0,0,0,0,0,0xff,0xff,0xff,0xff, \
+ 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff]
+lst_cfg2420_1=	  [0x3c,0xcc,0xc3,0xe3,0x49,0xf9,0x33,0x9f,0,0xfc,0xff,0xff,0xff,0x0f,0,0,0,0xff,0xff,0xff,0xff,0xf3,0xff, \
+    0x0f,0,0x70,0,0xcc,0xff,0xff,0x03]
 #                                                                                20   22       26          30       34       38       42          46            50       54
 lst_delete2330=   [0x23,0x30,0,0,0,0, 0,0,0,0,0,0, 0x93,0xbb,0x4c,0x0d, 0,0,2,0, 0,0, 0,0,0,0, 0,0,0,0x10, 0,0,1,0, 0,0,0,0, 0,0,0,0, 0,0,0,0x80 ,0xc,0,0,0x90, 0xc,0,0,0]
 inictrlid=[0x93,0xbb,0x4c,0xd]
@@ -160,6 +173,31 @@ def gettimeint(b, a):
     sec = (b%0x20)*2
     mi = ((a<<8)|b)/0x20
     return [mi/64, mi%64, sec]
+
+def make2byteddate(lstplus):
+# 1 min = 0x20, discr. 2 sec
+    loctim=localtime()
+    if loctim.tm_year<2000:
+	return
+    k1 = loctim.tm_min*0x20 + loctim.tm_hour*0x20*64 + loctim.tm_sec/2
+    ky = (loctim.tm_year-2000+lstplus[0])*2
+#    km = loctim.tm_mday
+#----- 29 feb protection
+    tmpmon = loctim.tm_mon
+    tmpday = loctim.tm_mday
+    if lstplus[0] > 0:
+	if tmpmon == 2 and tmpday == 29:
+	    tmpday = 28
+#~-----
+    if tmpmon > 7:	
+	km = (tmpmon-8)*32
+	ky += 1
+    else:
+	km = ((tmpmon-1)*32) + 0x20
+    km += tmpday
+    l = [km, ky]
+    return l
+#    tim2 = localtim.tm_hour*64 + localtim.tm_min
 
 def prepareheader(lst):
     global itcnt
@@ -200,12 +238,19 @@ def sendtosocket(d,i):
 	    if loglevel>=0: syslog.syslog('no socket for '+str(i))
 
 def send2pre():
+#    print 'send2pre ',broadhost
     pckpre = struct.pack('12B',*pre)
 #60 60
     sendtosocket(pckpre, (broadhost, port))
     sendtosocket(pckpre, (broadhost, port))
     time.sleep(.1)
 
+def send2broadpre(broad):
+    pckpre = struct.pack('12B',*pre)
+#60 60
+    sendtosocket(pckpre, (broad, port))
+    sendtosocket(pckpre, (broad, port))
+    time.sleep(.1)
 
 def getcards(prresult):
     #60 60 62-> 126<- 70(2110)-> <-1094(2111)
@@ -390,6 +435,8 @@ def addcard(cardid):
     time.sleep(.1)
     send2pre()
     
+    lst_addcard2320[32:34] = make2byteddate([0])
+    lst_addcard2320[34:36] = make2byteddate([15])
     prepareheader(lst_addcard2320)
     lst_addcard2320[20:24]=cardid
     lst_addcard2320[36:40]=doorlist
@@ -467,9 +514,48 @@ def seekdevice(seekid):
 	else:
 	    break
     
+
+def get_ipv4_address():
+    """
+    Returns IP address(es) of current machine.
+    :return:
+    """
+    p = subprocess.Popen(["ifconfig"], stdout=subprocess.PIPE)
+    ifc_resp = p.communicate()
+#    patt = re.compile(r'broadcast\s*\w*\S*:\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+    patt = re.compile('broadcast\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+#    patt = re.compile('((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-4]|2[0-5][0-9]|[01]?[0-9][0-9]?))')
+    resp = patt.findall(ifc_resp[0])
+    return resp
+#    for ip in resp:
+#	print ip
+
+
+def changecfg(doordurtime):
+    global itcnt
+    lstcfg=[]
+    lstcfg[0:] = repeat(0,1172)
+    lstcfg[0:260] = lst_cfg2420
+#for 4 doors simultaneously:
+    lstcfg[22] = lstcfg[24] = lstcfg[26] = lstcfg[28] = (doordurtime)&0xFF
+    lstcfg[23] = lstcfg[25] = lstcfg[27] = lstcfg[29] = (doordurtime)>>8
+    lstcfg[1044:1044+len(lst_cfg2420_1)-1] = lst_cfg2420_1
+    prepareheader(lstcfg)
+    preparecrc(lstcfg)
+    tup1=tuple(lstcfg)
+#    print tup1
+    pck = struct.pack('1172B',*tup1)
+    sendtosocket(pck, (host, port))
+
 def changeip(newip, newmask, newgate):
     global itcnt
-    send2pre()
+
+    resp = get_ipv4_address()
+    if len(resp) < 1:
+	print 'No broadcast addresses found'
+	exit(0)
+    
+#    send2pre()
     prepareheader(lst_newip2520)
     lst_newip2520[21:25] = newip
     lst_newip2520[25:29] = newmask
@@ -481,7 +567,12 @@ def changeip(newip, newmask, newgate):
     tup1=tuple(lst_newip2520)
 #    print tup1
     pck = struct.pack('1172B',*tup1)
-    sendtosocket(pck, (broadhost, port))
+#    sendtosocket(pck, (broadhost, port))
+    for braddr in resp:
+	send2broadpre(braddr)
+	sendtosocket(pck, (braddr, port))
+	print 'Set ip to broadcast ',braddr
+#    sendtosocket(pck, (broadhostff, port))
 
 def getcarddoorlist(icardid):
     cyc0 = 0
@@ -512,6 +603,11 @@ def killorphaned():
 #    print("2jopa")
 lastcountedrec=0
 
+#print gettimeint(0xFD, 0x5E)
+#print getdateint(0x61, 0x60)
+#print make2byteddate()
+#exit(0)
+
 #pckpre = struct.pack('12B',*pre)
 triparam=0
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -541,6 +637,8 @@ parser.add_argument('-addcard',nargs=2,help='Add card (-addcard 5678 1,3 means a
 parser.add_argument('-updateguestcards',action='store_const',const='g',help='Get cards from file & controller, compare and update')
 parser.add_argument('-test',action='store_const',const='test',help='Just test')
 parser.add_argument('-base',help='base connection string')
+parser.add_argument('-expy',help='card expiration, in years')
+parser.add_argument('-cfg',help='cfg')
 
 args = parser.parse_args()
 
@@ -577,6 +675,19 @@ if args.ip:
 	exit(0)
 #    ipb = args.ip.split('.')
 #    print args.ip, len(args.ip), host
+    numdots = 0
+    posstr = 0
+    poslastdot = 0
+    for i in host:
+	posstr += 1
+	if i == '.':
+	    numdots += 1
+	    poslastdot = posstr
+    if not numdots == 3:
+        print("Error in IP address")
+        exit(0)
+    else:
+        broadhost=host[:poslastdot]+'255'
     triparam+=1
 
 if args.port:
@@ -589,6 +700,39 @@ if args.base:
     baseconnstring = args.base
 #    print 'got basecstr ', baseconnstring
 
+if args.setip:
+#    get_ipv4_address()
+#    exit(0)
+    print args.setip, len(args.setip)
+#    try:
+    if 1:
+	IP(args.setip)
+	if args.mask:
+	    IP(args.mask)
+	if args.gw:
+	    IP(args.gw)
+#    except:
+    else:
+	print('Invalid parametr, must be x.y.z.a where values are in range 0...255')
+	exit(0)
+#    ipb = [0,0,0,0]
+    ipb = args.setip.split('.')
+    maskb = [255,255,255,0]
+    gwb = [0,0,0,0]
+    if args.mask:
+	maskb = args.mask.split('.')
+    if args.gw:
+	gwb = args.gw.split('.')
+    print 'Set new network parameters to device: ip=',ipb,'mask=',maskb,'gw=',gwb
+    try:
+	changeip((int(ipb[0]),int(ipb[1]),int(ipb[2]),int(ipb[3])),\
+	(int(maskb[0]),int(maskb[1]),int(maskb[2]),int(maskb[3])), (int(gwb[0]),int(gwb[1]),int(gwb[2]),int(gwb[3])))
+    except:
+	print 'Invalid IP addres, must be x.y.z.a where values are in range 0...255'
+    exit(0)
+    
+
+
 if triparam != 2:
     print ('Must specify required options: IP and sn  -ip= , -s= ')
     exit(0)
@@ -597,6 +741,17 @@ if triparam != 2:
 
 #getini()
 #print('doorlist before', doorlist)
+
+#if args.expy:
+#    global expyears
+#    tmp1 = int(args.expy)
+#    if tmp1<1 or tmp1>20:
+#	pass
+#    else: expyears = tmp1
+
+if args.cfg:
+    changecfg(5)
+    exit(0)
 
 if args.d:
     for door in args.d:
@@ -823,35 +978,6 @@ if args.updatecards:
 	    if loglevel>1: syslog.syslog('There are '+str(numzerocards)+' cards with zero doorlist on '+str(irdrid))
     exit(0)
 
-if args.setip:
-    print args.setip, len(args.setip)
-#    try:
-    if 1:
-	IP(args.setip)
-	if args.mask:
-	    IP(args.mask)
-	if args.gw:
-	    IP(args.gw)
-#    except:
-    else:
-	print('Invalid parametr, must be x.y.z.a where values are in range 0...255')
-	exit(0)
-#    ipb = [0,0,0,0]
-    ipb = args.setip.split('.')
-    maskb = [255,255,255,0]
-    gwb = [0,0,0,0]
-    if args.mask:
-	maskb = args.mask.split('.')
-    if args.gw:
-	gwb = args.gw.split('.')
-    print 'Set new network parameters to device: ip=',ipb,'mask=',maskb,'gw=',gwb
-    try:
-	changeip((int(ipb[0]),int(ipb[1]),int(ipb[2]),int(ipb[3])),\
-	(int(maskb[0]),int(maskb[1]),int(maskb[2]),int(maskb[3])), (int(gwb[0]),int(gwb[1]),int(gwb[2]),int(gwb[3])))
-    except:
-	print 'Invalid IP addres, must be x.y.z.a where values are in range 0...255'
-    exit(0)
-    
 
 #addcard((0x5d,0xb3,0x63,1))
 #getcarddoorlist((0x5d,0xb3,0x63,1))
@@ -896,6 +1022,8 @@ except:
 #if 0:
 while b>0:
     killorphaned()
+#    if bNoCon:
+#	send2pre()
     prepareheader(lst0)
     preparecrc(lst0)
     tup1=tuple(lst0)

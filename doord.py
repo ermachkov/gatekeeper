@@ -7,10 +7,10 @@ import argparse
 from time import localtime
 from IPy import IP
 import dbus, syslog, re, subprocess
-from bazokle import ConnBase, GetCardsFromBase, CloseBase, getguestcards
+from oradb import ConnBase, GetCardsFromBase, CloseBase, getguestcards
 #import cx_Oracle
 #from bazokle import ConnBase, CloseBase
-#import bazokle
+#import OAbazokle
 
 baseconnstring=''
 
@@ -750,7 +750,7 @@ if triparam != 2:
 #    else: expyears = tmp1
 
 if args.cfg:
-    changecfg(5)
+    changecfg(int(args.cfg))
     exit(0)
 
 if args.d:
@@ -1146,4 +1146,3 @@ while b>0:
     time.sleep(.1)
 #    b=b-1
 sock.close()
-

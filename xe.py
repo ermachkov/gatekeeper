@@ -8,6 +8,8 @@ from dbus.mainloop.qt import DBusQtMainLoop
 import argparse, ConfigParser, os, sys
 import syslog, signal, threading
 
+cfgfilename='gkeep.conf'
+
 verbosity=0
 loglevel=0
 #loglevel 0: log only critical events (base error, ctrl conn. error)
@@ -22,8 +24,8 @@ except:
     if verbosity>0: print 'Error import cx_Oracle. Check environment variables for oracle!'
     exit(0)
 
-from bazokle import getguestcards
-from bazokle import ConnBase, CloseBase
+from oradb import getguestcards
+from oradb import ConnBase, CloseBase
 
 #loglevel=1
 proclist=[]
@@ -197,11 +199,11 @@ def getini():
     global loglevel, baseconnstring
     global CONST_SHED_TIMESYNC, CONST_SHED_UPDATE_CARDS
     try:
-	f = open('cardrd.ini', 'r')
+	f = open(cfgfilename, 'r')
 	f.close()
 	try:
 	    cfg = ConfigParser.RawConfigParser()
-	    cfg.read('cardrd.ini')
+	    cfg.read(cfgfilename)
 	    sectlist = cfg.sections()
 	    if verbosity>0: print 'found sections in ini file:' ,sectlist
 	    for item in sectlist:

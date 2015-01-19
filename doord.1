@@ -1,0 +1,53 @@
+.\" Manpage for gatekeeper.
+.TH man 8 "17 Dec 2014" "1.0" "doordaemon man page"
+.SH NAME
+doordaemon - component of gatekeeper that serves a single controller
+.SH SYNOPSIS
+doordaemon -ip=<addr> -s=<sn> -base=BASE [-v V][-a A][-d D][-p P][-m M][-t][-f][-e][-g][-setip IP [-mask MASK [-gw GW]]][-logs L][-updatecards][-addcard]
+.SH DESCRIPTION
+garekeeper is a system that control doors access
+.SH OPTIONS
+.IP -ip=IP
+ip-address to serve
+.IP -s=SN
+serial number of controller to serve
+.IP -base
+base connection string
+.IP -v=V
+verbosity. -v=1 - verbose, -v=0 - silent
+.IP -a=A
+allow doors for applied card. -a=1 - allow door 1, -a=2,3 - allow doors 2,3. All other doors disallowed.
+.IP -d=D
+disallow doors for applied card. -d=1 - disallow door 1, -a=2,3 - disallow doors 2,3.
+.IP -p=P
+allow doors in addition to allowed for applied card. -d=1 - allow door 1, -a=2,3 - allow doors 2,3. All other doors keep unchanged.
+.IP -t
+time sync
+.IP -f
+find device
+.IP -e
+erase all cards from controller
+.IP -g
+get all cards (with doors) attached to controller
+.IP -setip IP [-mask MASK [gw GW]]
+set new IP-address, mask and gateway to controller with given s/n
+.IP -logs
+log level 0,1,2 (0 - critical, 1 - middle, 2 - verbose)
+.IP -updatecards
+get cards from base and guestfile and add them to controller (and delete extra cards from controller)
+.SH SEE ALSO
+man xe
+.SH EXAMPLES
+.TP
+doord -s=223132563 -ip=192.168.1.1 -base=gkeep/gkeep@192.168.1.2/PUDP -g -v=1
+get all cards from controller and display them
+.TP
+doord -s=223132563 -ip=192.168.1.1 -base=gkeep/gkeep@192.168.1.2/PUDP -d 1,3 -a 1,2,4
+disallow door access to doors 1,3 and allow door access to doors 1,2,4 (applied to doorlist sequently: -d first, -a then)
+.TP
+doord -s=223132563 -setip 192.168.66.77
+.TP
+doord -s=223132563 -setip 192.168.66.77 -mask 255.255.255.0
+set new IP address (and optionally mask
+.SH AUTHOR
+VEB GUNDYSCHWEIN KIRCHE EINSTIEGCONTROLLER GmbH.

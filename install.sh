@@ -29,6 +29,11 @@ cp doord.py /usr/libexec/gatekeeper
 chmod 755 /usr/libexec/gatekeeper/doord.py
 echo 'Files copied'
 
+echo 'Gzip and move help files...'
+gzip -f doord.1
+mv -f doord.1.gz /usr/share/man/man1/doord.1.gz
+echo 'Help files moved'
+
 EPO=0
 
 #check oracle paths

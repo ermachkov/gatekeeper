@@ -30,8 +30,7 @@ chmod 755 /usr/libexec/gatekeeper/doord.py
 echo 'Files copied'
 
 echo 'Gzip and move help files...'
-gzip -f doord.1
-mv -f doord.1.gz /usr/share/man/man1/doord.1.gz
+gzip -f -c doord.1 > /usr/share/man/man1/doord.1.gz
 echo 'Help files moved'
 
 EPO=0

@@ -3,7 +3,7 @@
 red='\033[0;31m'
 NC='\033[0m' # No Color
 
-orsh=/etc/profile.d/uracle.sh
+orsh=/etc/profile.d/oracle.sh
 
 echo -e "-gatekeeper installer-"
 if [ ! -d /usr/lib/oracle ]; then
@@ -45,7 +45,7 @@ fi
 
 if [ -z "$LD_LIBRARY_PATH" ]; then
 echo 'Not found environment variable LD_LIBRARY_PATH!'
-echo $EPO
+#echo $EPO
 if test $EPO -eq 1; then
 echo -e "${red}Check the environment variable LD_LIBRARY_PATH. If it is not provided, please set it manually in profile.d or by another way.${NC}"
 exit 1

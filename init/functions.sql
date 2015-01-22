@@ -53,11 +53,11 @@ end PG_ADD_CONTROLLER;
 --ADD_ACTION
 create or replace procedure PG_ADD_ACTION
 (
-  nACTID        in number,
-  nDOOR        in number,
+  nACTID        in number,             --ИД из контроллера
+  nDOOR        in number,              --номер двери
   nCARDID        in number,            -- номер карты
-  dDATE         in date,
-  bRESULT       in number,
+  dDATE         in date,               --дата
+  bRESULT       in number,             --результат пустил/не пустил (0/1)
   nWARNING      out number,
   sMSG          out varchar2
 ) AS

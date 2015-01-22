@@ -30,7 +30,7 @@
 
 Каждая процедура возвращает 2 параметра nWARNING и sMSG; Если все хорошо то nWARNING=0, sMSG=Успех. Если что-то не так, то nWARNING=1, sMSG=Описание ошибки.
 
-4. Чтобы считать таблицу с доступами (какая карта какую дверь открывает) вызвать функцию fg_get_permissions. Она возвращает SYS_REFCURSOR.
+4. Чтобы считать таблицу с доступами (какая карта какую дверь открывает) вызвать функцию fg_get_permissions(controller number). Она возвращает SYS_REFCURSOR.
 Читать SYS_REFCURSOR в питоне примерно так:
 https://code.google.com/p/cx-oracle-demos/source/browse/trunk/refcursor.py?r=11
 Или юзай гугл :)

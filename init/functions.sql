@@ -51,3 +51,39 @@ nWARNING:=0;
 sMSG:='Успех';
 end PG_ADD_CONTROLLER;
 
+--ADD_ACTION
+create or replace procedure PG_ADD_ACTION
+(
+  nACTID        in number,
+  nDOOR        in number,
+  nCARDID        in number,            -- номер карты
+  dDATE         in date,
+  bRESULT       in number,
+  nWARNING      out number,
+  sMSG          out varchar2
+) AS
+nGATEID number;
+nIDTYPE number;
+nCOUNT number;
+begin
+SELECT count(c.id) INTO nCOUNT from actions c where c.actid=nACTID;
+IF nCOUNT = 0 THEN
+SELECT p.gateid into nGATEID from permissions p where p.cardid=nCARDID; 
+IF MOD(nDOOR, 2) = 0 THEN
+    nIDTYPE:=0;
+    ELSE
+    nIDTYPE:=1;
+  END IF;
+
+INSERT INTO actions (id,gateid,cardid,idtype,bresult,dactdate,actid,ndoor) VALUES (gatekeeper_seq.nextval,nGATEID,nCARDID,nIDTYPE,bRESULT,dDATE,nACTID,nDOOR);
+ELSE
+nWARNING:=1;
+sMSG:='Запись '||nACTID||' уже добавлена!';
+return;
+END IF;
+
+nWARNING:=0;
+sMSG:='Успех';
+end PG_ADD_ACTION;
+
+

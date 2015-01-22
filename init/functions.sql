@@ -1,5 +1,5 @@
 --get permissions
-CREATE OR REPLACE FUNCTION fg_get_permissions
+CREATE OR REPLACE FUNCTION fg_get_permissions (sPNUMB in varchar2)
   RETURN SYS_REFCURSOR
 IS
   l_rc SYS_REFCURSOR;
@@ -7,7 +7,7 @@ BEGIN
   OPEN l_rc
    FOR SELECT c.sphysnumb,p.cardid,r.nlognumb
          FROM permissions p INNER JOIN controllers c ON c.id=p.controllerid
-         INNER JOIN readers r ON r.id=p.readerid ORDER BY c.sphysnumb;
+         INNER JOIN readers r ON r.id=p.readerid where c.sphysnumb=sPNUMB ORDER BY c.sphysnumb;
   RETURN l_rc;
 END;
 /

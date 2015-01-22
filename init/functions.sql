@@ -10,7 +10,7 @@ BEGIN
          INNER JOIN readers r ON r.id=p.readerid ORDER BY c.sphysnumb;
   RETURN l_rc;
 END;
-
+/
 --ADD_CONTROLLER
 create or replace procedure PG_ADD_CONTROLLER
 (
@@ -30,27 +30,26 @@ sMSG:='Нечетное кол-во замков не поддерживается';
  END IF;
  SELECT count(c.id) INTO nCOUNT from controllers c where c.sphysnumb=sNUMBER;
 IF nCOUNT = 0 THEN
-INSERT INTO controllers (id,gateid,sphysnumb,sdesc) VALUES (gatekeeper_seq.nextval,NULL,sNUMBER,'Контроллер');
+INSERT INTO controllers (id,sphysnumb,sdesc) VALUES (gatekeeper_seq.nextval,sNUMBER,'Контроллер');
 ELSE
 nWARNING:=1;
 sMSG:='Контроллер '||sNUMBER||' уже добавлен!';
-return;  
-END IF;  
-
+return;
+END IF;
 nCID:=gatekeeper_seq.currval;
 nDOOR:=nDOORS-1;
  FOR i IN 0..nDOOR LOOP
    IF MOD(i, 2) = 0 THEN
     INSERT INTO readers (id,controllerid,nlognumb,idtype,sdesc) VALUES (gatekeeper_seq.nextval,nCID,i,0,'Вход');
     ELSE
-    INSERT INTO readers (id,controllerid,nlognumb,idtype,sdesc) VALUES (gatekeeper_seq.nextval,nCID,i,1,'Выход');  
+    INSERT INTO readers (id,controllerid,nlognumb,idtype,sdesc) VALUES (gatekeeper_seq.nextval,nCID,i,1,'Выход');
   END IF;
-   
+
   END LOOP;
 nWARNING:=0;
 sMSG:='Успех';
 end PG_ADD_CONTROLLER;
-
+/
 --ADD_ACTION
 create or replace procedure PG_ADD_ACTION
 (
@@ -81,7 +80,6 @@ nWARNING:=1;
 sMSG:='Запись '||nACTID||' уже добавлена!';
 return;
 END IF;
-
 nWARNING:=0;
 sMSG:='Успех';
 end PG_ADD_ACTION;

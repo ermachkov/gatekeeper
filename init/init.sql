@@ -26,6 +26,7 @@ CONSTRAINT readers_pk PRIMARY KEY (ID)
 CREATE TABLE gates(
 ID number(10) not null,
 SNAME varchar2(50) not null,
+CONTROLLERID number(10),
 CONSTRAINT gates_pk PRIMARY KEY (ID)
 );
 

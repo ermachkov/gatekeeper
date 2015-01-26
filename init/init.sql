@@ -52,5 +52,6 @@ ACTID number(10) not null,
 BRESULT number(1),
 NDOOR number(10),
 DACTDATE DATE,
+SPHYSNUMB varchar2(50) not null,
 CONSTRAINT actions_pk PRIMARY KEY (ID)
 );

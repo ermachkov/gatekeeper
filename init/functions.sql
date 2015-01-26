@@ -78,9 +78,10 @@ INNER JOIN controllers s ON p.controllerid=s.id
 where p.cardid=nCARDID and s.sphysnumb=nCONTROLLER and p.readerid=nDOOR;
 EXCEPTION
       WHEN NO_DATA_FOUND THEN
-         nWARNING:=1;
+       /*  nWARNING:=1;
          sMSG:=''||nCARDID||' permission denided!'; 
-return; 
+return; */
+nGATEID:=NULL;
 END;
 IF MOD(nDOOR, 2) = 0 THEN
     nIDTYPE:=0;
@@ -88,7 +89,7 @@ IF MOD(nDOOR, 2) = 0 THEN
     nIDTYPE:=1;
   END IF;
 
-INSERT INTO actions (id,gateid,cardid,idtype,bresult,dactdate,actid,ndoor) VALUES (gatekeeper_seq.nextval,nGATEID,nCARDID,nIDTYPE,bRESULT,dDATE,nACTID,nDOOR);
+INSERT INTO actions (id,gateid,cardid,idtype,bresult,dactdate,actid,ndoor,sphysnumb) VALUES (gatekeeper_seq.nextval,nGATEID,nCARDID,nIDTYPE,bRESULT,dDATE,nACTID,nDOOR,nCONTROLLER);
 ELSE
 nWARNING:=1;
 sMSG:='Запись '||nACTID||' уже добавлена!';

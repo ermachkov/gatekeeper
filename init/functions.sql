@@ -58,6 +58,7 @@ create or replace procedure PG_ADD_ACTION
   nCARDID        in number,            -- номер карты
   dDATE         in date,               --дата
   bRESULT       in number,             --результат пустил/не пустил (0/1)
+ nCONTROLLER   in number,            --номер контроллера
   nWARNING      out number,
   sMSG          out varchar2
 ) AS
@@ -67,7 +68,20 @@ nCOUNT number;
 begin
 SELECT count(c.id) INTO nCOUNT from actions c where c.actid=nACTID;
 IF nCOUNT = 0 THEN
-SELECT p.gateid into nGATEID from permissions p where p.cardid=nCARDID; 
+  BEGIN
+/*SELECT p.gateid into nGATEID from permissions p
+INNER JOIN controllers s ON p.controllerid
+ where p.cardid=nCARDID; */
+ 
+SELECT p.gateid into nGATEID from permissions p
+INNER JOIN controllers s ON p.controllerid=s.id
+where p.cardid=nCARDID and s.sphysnumb=nCONTROLLER and p.readerid=nDOOR;
+EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         nWARNING:=1;
+         sMSG:=''||nCARDID||' permission denided!'; 
+return; 
+END;
 IF MOD(nDOOR, 2) = 0 THEN
     nIDTYPE:=0;
     ELSE

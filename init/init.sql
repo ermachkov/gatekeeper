@@ -45,7 +45,7 @@ CREATE INDEX permissions_i ON permissions (CARDID, CONTROLLERID, READERID, GATEI
 
 CREATE TABLE actions(
 ID number(10) not null,
-GATEID number(10) not null, 
+GATEID number(10), 
 CARDID number(10) not null,
 IDTYPE number(10) not null,
 ACTID number(10) not null,

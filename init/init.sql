@@ -1,4 +1,4 @@
---create view
+﻿--create view
 --где parus - имя схемы паруса
 create or replace view vg_cards as
 select AG.AGNNAME,AGD.DOCNUMB,AGD.DOC_ENDDATE

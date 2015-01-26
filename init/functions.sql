@@ -1,4 +1,4 @@
---get permissions
+п»ї--get permissions
 CREATE OR REPLACE FUNCTION fg_get_permissions (sPNUMB in varchar2)
   RETURN SYS_REFCURSOR
 IS
@@ -14,8 +14,8 @@ END;
 --ADD_CONTROLLER
 create or replace procedure PG_ADD_CONTROLLER
 (
-  sNUMBER        in varchar2,            -- физический номер контроллера
-  nDOORS         in number,            -- максимальное количество замков
+  sNUMBER        in varchar2,            -- С„РёР·РёС‡РµСЃРєРёР№ РЅРѕРјРµСЂ РєРѕРЅС‚СЂРѕР»Р»РµСЂР°
+  nDOORS         in number,            -- РјР°РєСЃРёРјР°Р»СЊРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ Р·Р°РјРєРѕРІ
   nWARNING          out number,
   sMSG      out varchar2
 ) AS
@@ -25,39 +25,39 @@ nCOUNT number;
 begin
 IF MOD(nDOORS, 2) = 1 THEN
 nWARNING:=1;
-sMSG:='Нечетное кол-во замков не поддерживается';
+sMSG:='РќРµС‡РµС‚РЅРѕРµ РєРѕР»-РІРѕ Р·Р°РјРєРѕРІ РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ';
     return;
  END IF;
  SELECT count(c.id) INTO nCOUNT from controllers c where c.sphysnumb=sNUMBER;
 IF nCOUNT = 0 THEN
-INSERT INTO controllers (id,sphysnumb,sdesc) VALUES (gatekeeper_seq.nextval,sNUMBER,'Контроллер');
+INSERT INTO controllers (id,sphysnumb,sdesc) VALUES (gatekeeper_seq.nextval,sNUMBER,'РљРѕРЅС‚СЂРѕР»Р»РµСЂ');
 ELSE
 nWARNING:=1;
-sMSG:='Контроллер '||sNUMBER||' уже добавлен!';
+sMSG:='РљРѕРЅС‚СЂРѕР»Р»РµСЂ '||sNUMBER||' СѓР¶Рµ РґРѕР±Р°РІР»РµРЅ!';
 return;
 END IF;
 nCID:=gatekeeper_seq.currval;
 nDOOR:=nDOORS-1;
  FOR i IN 0..nDOOR LOOP
    IF MOD(i, 2) = 0 THEN
-    INSERT INTO readers (id,controllerid,nlognumb,idtype,sdesc) VALUES (gatekeeper_seq.nextval,nCID,i,0,'Вход');
+    INSERT INTO readers (id,controllerid,nlognumb,idtype,sdesc) VALUES (gatekeeper_seq.nextval,nCID,i,0,'Р’С…РѕРґ');
     ELSE
-    INSERT INTO readers (id,controllerid,nlognumb,idtype,sdesc) VALUES (gatekeeper_seq.nextval,nCID,i,1,'Выход');
+    INSERT INTO readers (id,controllerid,nlognumb,idtype,sdesc) VALUES (gatekeeper_seq.nextval,nCID,i,1,'Р’С‹С…РѕРґ');
   END IF;
 
   END LOOP;
 nWARNING:=0;
-sMSG:='Успех';
+sMSG:='РЈСЃРїРµС…';
 end PG_ADD_CONTROLLER;
 /
 --ADD_ACTION
 create or replace procedure PG_ADD_ACTION
 (
-  nACTID        in number,             --ИД из контроллера
-  nDOOR        in number,              --номер двери
-  nCARDID        in number,            -- номер карты
-  dDATE         in date,               --дата
-  bRESULT       in number,             --результат пустил/не пустил (0/1)
+  nACTID        in number,             --РР” РёР· РєРѕРЅС‚СЂРѕР»Р»РµСЂР°
+  nDOOR        in number,              --РЅРѕРјРµСЂ РґРІРµСЂРё
+  nCARDID        in number,            -- РЅРѕРјРµСЂ РєР°СЂС‚С‹
+  dDATE         in date,               --РґР°С‚Р°
+  bRESULT       in number,             --СЂРµР·СѓР»СЊС‚Р°С‚ РїСѓСЃС‚РёР»/РЅРµ РїСѓСЃС‚РёР» (0/1)
   nWARNING      out number,
   sMSG          out varchar2
 ) AS
@@ -77,11 +77,11 @@ IF MOD(nDOOR, 2) = 0 THEN
 INSERT INTO actions (id,gateid,cardid,idtype,bresult,dactdate,actid,ndoor) VALUES (gatekeeper_seq.nextval,nGATEID,nCARDID,nIDTYPE,bRESULT,dDATE,nACTID,nDOOR);
 ELSE
 nWARNING:=1;
-sMSG:='Запись '||nACTID||' уже добавлена!';
+sMSG:='Р—Р°РїРёСЃСЊ '||nACTID||' СѓР¶Рµ РґРѕР±Р°РІР»РµРЅР°!';
 return;
 END IF;
 nWARNING:=0;
-sMSG:='Успех';
+sMSG:='РЈСЃРїРµС…';
 end PG_ADD_ACTION;
 
 

@@ -75,7 +75,8 @@ INNER JOIN controllers s ON p.controllerid
  
 SELECT p.gateid into nGATEID from permissions p
 INNER JOIN controllers s ON p.controllerid=s.id
-where p.cardid=nCARDID and s.sphysnumb=nCONTROLLER and p.readerid=nDOOR;
+INNER JOIN readers r ON p.readerid=r.id
+where p.cardid=nCARDID and s.sphysnumb=nCONTROLLER and r.nlognumb=nDOOR;
 EXCEPTION
       WHEN NO_DATA_FOUND THEN
        /*  nWARNING:=1;
@@ -98,5 +99,3 @@ END IF;
 nWARNING:=0;
 sMSG:='Успех';
 end PG_ADD_ACTION;
-
-

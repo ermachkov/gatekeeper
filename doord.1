@@ -1,5 +1,5 @@
 .\" Manpage for gatekeeper.
-.TH man 8 "17 Dec 2014" "1.0" "doordaemon man page"
+.TH man 1 "22 Dec 2015" "1.0" "doordaemon man page"
 .SH NAME
 doordaemon - component of gatekeeper that serves a single controller
 .SH SYNOPSIS
@@ -36,7 +36,7 @@ log level 0,1,2 (0 - critical, 1 - middle, 2 - verbose)
 .IP -updatecards
 get cards from base and guestfile and add them to controller (and delete extra cards from controller)
 .SH SEE ALSO
-man xe
+man xe, man gkeep.conf, man guestcards.conf
 .SH EXAMPLES
 .TP
 doord -s=223132563 -ip=192.168.1.1 -base=gkeep/gkeep@192.168.1.2/PUDP -g -v=1

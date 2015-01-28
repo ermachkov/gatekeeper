@@ -8,6 +8,7 @@ from dbus.mainloop.qt import DBusQtMainLoop
 import argparse, ConfigParser, os, sys
 import syslog, signal, threading
 
+os.environ["NLS_LANG"] = ".UTF8"
 cfgfilename='gkeep.conf'
 
 verbosity=0
@@ -41,12 +42,15 @@ CONST_SHED_TIMESYNC=3600
 CONST_SHED_UPDATE_CARDS=3601
 shedcount_timesync=CONST_SHED_TIMESYNC
 shedcount_updatecards=CONST_SHED_UPDATE_CARDS
+basecommitcnt=0
 
 baseconnstring=''
 bBaseOpen=0
 con=None
 cur=None
 bStopped=0
+
+bControllerAdded=0
 
 defport=60000
 
@@ -80,8 +84,21 @@ def OpenTheBase():
 	if verbosity>0: print 'Not connected to base'
     
 
+#def PutEvent(sti)
+#    res=cur.callfunc('PG_ADD_ACTION',cx_Oracle.CURSOR,['423114863'], sti)
+def BaseAddController(strid):    
+    res1 = cur.var(cx_Oracle.NUMBER)
+    res2 = cur.var(cx_Oracle.STRING)
+    insertstr = [strid, str(4), res1, res2]
+#    insertstr = [1,2,3,4]
+    if verbosity>0: print 'Add controller to base: ', insertstr
+    cur.callproc('PG_ADD_CONTROLLER', insertstr)
+    if verbosity>0: print res1.getvalue(), res2.getvalue()
+#	cur.execute(execstring)
+#	con.commit()
+
 def DecodeCommData(w):
-    global bBaseOpen
+    global bBaseOpen, basecommitcnt, bControllerAdded
 #20141121 components of message:
 # 13 244 423114863 23311197 14 11 21 11 38 20 144 3
 # 13 - protocole ver = 13
@@ -111,20 +128,47 @@ def DecodeCommData(w):
 	resstr = str(1)
 #    insertstring = str(w[1])+', '+str(w[2])+', '+str(w[3])+', '+'66'+', '+str(resstr)+', '+ '\'' +str(w[6])+'-'+datem+'-'+str(w[4])+'\', '+str(resstr)+', '+str(w[11])
 #    insertstring = str(w[1])+', '+str(w[2])+', '+str(w[3])+', '+'66'+', '+str(resstr)+', '+ '\'' +str(w[6])+'-'+datem+'-'+str(w[4])+' '+str(w[7])+' '+str(w[8])+' '+str(w[9])+'\', '+str(resstr)+', '+str(w[11])
-    datestr = 'to_date(\'' + str(w[4])+str(w[5])+str(w[6])+' '+str(w[7])+':'+str(w[8])+':'+str(w[9])+'\', \'YYMMDD HH24:MI:SS\')'
-    insertstring = str(w[1])+', '+str(w[2])+', '+str(w[3])+', '+'66'+', '+str(resstr)+', ' + datestr +', '+ str(w[1])+', '+str(w[11])
+#    datestr = 'to_date(\'' + str(w[4])+str(w[5])+str(w[6])+' '+str(w[7])+':'+str(w[8])+':'+str(w[9])+'\', \'YYMMDD HH24:MI:SS\')'
+#    insertstring = str(w[1])+', '+str(w[2])+', '+str(w[3])+', '+'66'+', '+str(resstr)+', ' + datestr +', '+ str(w[1])+', '+str(w[11])
 #    insertstring = '+str(w[1])+', '+str(w[2])+', '+str(w[3])+', '+'66'+', '+str(resstr)+', '+str(w[6])+'-'+datem+'-'+str(w[4])
 #    print 'for base: ',insertstring
-    execstring = 'insert into actions (id, gateid, cardid, idtype, bresult, dactdate, actid, ndoor) values ('+insertstring+')'
-    if verbosity>0: print 'for base: ',execstring
+#    execstring = 'insert into actions (id, gateid, cardid, idtype, bresult, dactdate, actid, ndoor) values ('+insertstring+')'
+    accessstr = '0'
+#    datesqstr = Timestamp(w[4], w[5], w[6], w[7], w[8], w[9])
+#    print datesqstr
+    if w[10]>0:
+	accessstr = '1'
+#    if verbosity>0: print 'for base: ',execstring
 #    try:
 #    cur.prepare(execstring)
     
 #    cur.execute('insert into actions (id, gateid, cardid, idtype, bresult, dactdate) values ', str(w[1]), str(w[2]), str(w[3]), '66', resstr, datestr)
     try:
-	cur.execute(execstring)
-	con.commit()
+#    if 1:
+
+#PG_ADD_ACTION:
+#nACTID in number, id
+#nDOOR in number, door
+#nCARDID in number, card
+#dDATE in date, -date
+#bRESULT in number, -access
+#nWARNING out number,
+#sMSG out varchar2
+	if not bControllerAdded:
+	    BaseAddController(str(w[2]))
+	    bControllerAdded=1
+	res01 = cur.var(cx_Oracle.NUMBER)
+	res02 = cur.var(cx_Oracle.STRING)
+	datestr = cx_Oracle.Timestamp(w[4]+2000, w[5], w[6], w[7], w[8], w[9])
+	insertstr = [str(w[1]), str(w[11]), str(w[3]), datestr, accessstr, str(w[2]), res01, res02]
+	if verbosity>0: print 'To base: ', insertstr
+	cur.callproc('PG_ADD_ACTION', insertstr)
+	if verbosity>0: print 'result of PG_ADD_ACTION: ', res01.getvalue(), res02.getvalue()
+#	cur.execute(execstring)
+	basecommitcnt=2
+#	con.commit()
     except:
+#    else:
 	if verbosity>0: print 'not inserted to base'
 #	print 'Insertad.'
 #    except:
@@ -329,7 +373,7 @@ def addsheduleaction(shedlist):
 	
 
 def sheduletimer():
-    global shedcount_timesync, shedcount_updatecards
+    global shedcount_timesync, shedcount_updatecards, basecommitcnt
 #    print 'sheduletimer... ',shedcount_timesync, shedcount_updatecards
     if shedcount_timesync:
 	shedcount_timesync -= 1
@@ -345,6 +389,11 @@ def sheduletimer():
 	    if verbosity>0: print 'Set to shedule: update cards'
 	    addsheduleaction(['-updatecards', '-base='+baseconnstring, '-v='+str(verbosity)])
 	    shedulerunner()
+    if basecommitcnt:
+	basecommitcnt -= 1
+	if not basecommitcnt:
+	    con.commit()
+	    if verbosity>0: print '-Commit-'
 
 def cycl():
     if bStopped:

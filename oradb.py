@@ -20,6 +20,9 @@ import ConfigParser
 #cur=None
 
 verbosity=0
+#from doord.py import verbosity
+
+guestcardsfilename='guestcards.conf'
 
 #def getBase(
 
@@ -78,35 +81,45 @@ def GetCardsFromBase(rdrid):
 	if verbosity>0: print 'Error'
 	return None
     try:
+#    if 1:
 #	cur.execute('select * from V_GETREADERSBYCONTROLLERID where SPHYSNUMB='+str(rdrid))
 #	cur.execute('select * from V_GETREADERSBYCONTROLLERID where SPHYSNUMB=423114863')
         t=threading.Timer(1,Timerok)
         t.start()
-        cur.execute('select P.CARDID,R.NLOGNUMB from permissions P LEFT JOIN readers R ON P.READERID=R.ID where P.CONTROLLERID IN (select id from controllers where sphysnumb='+str(rdrid)+')')
-#        cur.execute('select P.CARD1ID,R.NLOGNUMB from permissions P LEFT JOIN readers R ON P.READERID=R.ID where P.CONTROLLERID IN (select id from controllers where sphysnumb='+str(rdrid)+')')
+#        cur.execute('select P.CARDID,R.NLOGNUMB from permissions P LEFT JOIN readers R ON P.READERID=R.ID where P.CONTROLLERID IN (select id from controllers where sphysnumb='+str(rdrid)+')')
+	res=cur.callfunc('fg_get_permissions',cx_Oracle.CURSOR,[str(rdrid)])
+#	res=cur.callfunc('fg_get_permissions',cx_Oracle.CURSOR,['423114863'])
+#	res=cur.callfunc('fg_get_permissions',cx_Oracle.SYS_REFCURSOR,[strid])	
+#	for r in res:
+#    	    print 'Nasos ', r
+	
+#	print 'proshel'
 #        time.sleep(5)
         t.cancel()
+#    else:
     except:
+#	print 'Ne nasosal'
 	pass
 #	raise baseexcept
-    for result in cur:
+    for result in res:
+#	print 'Nasosal ',result
 	doorlist=[0,0,0,0]
-	if verbosity>0: print result[0], 'door', result[1]
-	if result[1]<4:
-	    doorlist[result[1]] = 1
+	if verbosity>0: print result[1], 'door', result[2]
+	if result[2]<4:
+	    doorlist[result[2]] = 1
 	else:
-	    if verbosity>0: print 'bad door number > 3 from base for reader', result[0]
+	    if verbosity>0: print 'bad door number > 3 from base for card', result[2]
 	    continue	#bad door number > 3
 	try:
-	    i=lstcards.index(result[0])
+	    i=lstcards.index(result[1])
 	    #door found - edit their doorlist
-	    lstdoors[i][result[1]] = 1
+	    lstdoors[i][result[2]] = 1
 #	    print lstcards[i][1]
 #	    print lstcards[i][1][2]
 	except:
-	    lstcards.append(result[0])
+	    lstcards.append(result[1])
 	    lstdoors.append(doorlist)
-	    if verbosity>0: print 'base\'s card', result[0]
+	    if verbosity>0: print 'base\'s card', result[1]
     if verbosity>0: print lstcards,lstdoors
     
 
@@ -138,11 +151,11 @@ def getguestcards(verbosity):
     guestcardlist=[]
     guestlist=[]
     try:
-	f = open('guestcards.ini', 'r')
+	f = open(guestcardsfilename, 'r')
 	f.close()
 	try:
     	    cfg = ConfigParser.RawConfigParser()
-    	    cfg.read('guestcards.ini')
+    	    cfg.read(guestcardsfilename)
     	    guestcardlist_ = cfg.sections()
     	    guestcardlist = [int(i) for i in guestcardlist_]
     	    if verbosity>0: print 'found sections (cards) in guestini file:' ,guestcardlist

@@ -48,3 +48,11 @@ rpm -i  oracle-instantclient11.2-basic-11.2.0.3.0-1.x86_64.rpm
 
 rpm -i http://sourceforge.net/projects/cx-oracle/files/5.1.2/cx_Oracle-5.1.2-11g-py27-1.x86_64.rpm
 (this is component for python 2.7)
+
+How to install gatekeeper (Oracle must be installed yet):
+
+3. run script and watch the result, success or not:
+
+sh ./install.sh
+
+if not, follow the messages from script, then run it again.

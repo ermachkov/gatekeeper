@@ -181,6 +181,7 @@ def make2byteddate(lstplus):
 	return
     k1 = loctim.tm_min*0x20 + loctim.tm_hour*0x20*64 + loctim.tm_sec/2
     ky = (loctim.tm_year-2000+lstplus[0])*2
+    ky1=20
 #    km = loctim.tm_mday
 #----- 29 feb protection
     tmpmon = loctim.tm_mon
@@ -882,7 +883,8 @@ if args.updatecards:
 #    if 1:
     guestl=getguestcards(verbosity)
 #    print 'lenbcs ', len(baseconnstring)
-    try:
+#    try:
+    if 1:
 	if len(baseconnstring) == 0: raise 'NoBaseconString'
 	ConnBase(baseconnstring)
 	lstbasecards=GetCardsFromBase(irdrid)
@@ -892,8 +894,8 @@ if args.updatecards:
 	if len(cardlist):
 	    checklist[0:] = repeat(0x0, len(cardlist))
 #	bBaseAccessed=1
-#    else:
-    except:
+    else:
+#    except:
 	if(verbosity>0): print '!!! FAILED TO ACCESS BASE'
 	if loglevel>=0: syslog.syslog('Failed to access base when updating cards')
 #        exit(0)

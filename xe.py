@@ -181,8 +181,15 @@ def DecodeCommData(w):
 
 class Cyclee(dbus.service.Object):
     def __init__(self):
-	busName = dbus.service.BusName(DBUSNAME, bus = dbus.SessionBus())
-	dbus.service.Object.__init__(self, busName, DBUSOBJECT)
+	try:
+	    busName = dbus.service.BusName(DBUSNAME, bus = dbus.SessionBus())
+	    dbus.service.Object.__init__(self, busName, DBUSOBJECT)
+	except:
+	    os.environ['DBUS_SESSION_BUS_ADDRESS'] = "unix:path=/run/dbus/system_bus_socket"
+	    os.environ["DISPLAY"] = ":0"
+	    busName = dbus.service.BusName(DBUSNAME, bus = dbus.SessionBus())
+	    dbus.service.Object.__init__(self, busName, DBUSOBJECT)
+
 
     @dbus.service.method(DBUSNAME, in_signature = '', out_signature = '')
     def exit(self):	

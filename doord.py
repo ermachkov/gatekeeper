@@ -54,9 +54,10 @@ baseconnstring=''
 
 loglevel=0
 
-DBUSNAME="org.pop.p"
-DBUSOBJECT="/Popist"
-
+#DBUSNAME="org.pop.p"
+#DBUSOBJECT="/org/pop/p/Popist"
+#DBUSNAMEDOT="org.freedesktop.pop"
+#DBUSNAMESLH="org/freedesktop/pop"
 
 protocolversiondbus=13
 bNoDBus=0
@@ -643,6 +644,8 @@ parser.add_argument('-cfg',help='cfg')
 
 args = parser.parse_args()
 
+#print 'doord args ',args
+
 if args.v:
 #    print 'verbosity:',args.v
     verbosity=int(args.v)
@@ -705,15 +708,15 @@ if args.setip:
 #    get_ipv4_address()
 #    exit(0)
     print args.setip, len(args.setip)
-#    try:
-    if 1:
+    try:
+#    if 1:
 	IP(args.setip)
 	if args.mask:
 	    IP(args.mask)
 	if args.gw:
 	    IP(args.gw)
-#    except:
-    else:
+    except:
+#    else:
 	print('Invalid parametr, must be x.y.z.a where values are in range 0...255')
 	exit(0)
 #    ipb = [0,0,0,0]
@@ -883,8 +886,8 @@ if args.updatecards:
 #    if 1:
     guestl=getguestcards(verbosity)
 #    print 'lenbcs ', len(baseconnstring)
-#    try:
-    if 1:
+    try:
+#    if 1:
 	if len(baseconnstring) == 0: raise 'NoBaseconString'
 	ConnBase(baseconnstring)
 	lstbasecards=GetCardsFromBase(irdrid)
@@ -894,8 +897,8 @@ if args.updatecards:
 	if len(cardlist):
 	    checklist[0:] = repeat(0x0, len(cardlist))
 #	bBaseAccessed=1
-    else:
-#    except:
+#    else:
+    except:
 	if(verbosity>0): print '!!! FAILED TO ACCESS BASE'
 	if loglevel>=0: syslog.syslog('Failed to access base when updating cards')
 #        exit(0)
@@ -1006,16 +1009,16 @@ send2pre()
 #sock.sendto(pckpre, (broadhost, port))
 bwasthesame=0
 
-def SendToXecutor(obj, st):
-    if not bNoDBus:
-	remote_object.commd(st)
-
-try:
-    bus = dbus.SessionBus()
-    remote_object = bus.get_object(DBUSNAME, DBUSOBJECT)
-except:
-    bNoDBus=1
-    print 'dbus object not found. Working separately'
+#def SendToXecutor(obj, st):
+def SendToXecutor(st):
+#    print 'send to xec'
+#    if not bNoDBus:
+#        print 'rem obj cmd ',remote_object
+    print 'doordata ',st
+    sys.stdout.flush()
+#	remote_object.commd(st)
+#	dbus_interface.commd(st)
+#	xe_iface.commd(st)
 
 #SendToXecutor(remote_object, str((1,2,3,4)))
 #SendToXecutor(remote_object, str(lst_addcard2010))
@@ -1088,6 +1091,7 @@ while b>0:
 			bprintonce=1
 		    if verbosity>0: print '%d id=%d card=%d(0x%x) time=%02d.%02d.%02d %02d:%02d:%02d f=%d %s %d (f2=%x)' %(ilastcnt,ctrlid[0],lastcard[0],lastcard[0],\
 			carddat[0],carddat[1],carddat[2],carttim[0],carttim[1],carttim[2],lastf1[0],propcl,lastdoor,ilastf2)
+#		    print 'bNoDBus=',bNoDBus
 		    if not bNoDBus:
 			if not flagadd:
 			    strx = str(protocolversiondbus)+' '+\
@@ -1095,7 +1099,8 @@ while b>0:
 			    str(carddat[0])+' '+str(carddat[1])+' '+str(carddat[2])+' '+\
 			    str(carttim[0])+' '+str(carttim[1])+' '+str(carttim[2])+' '+\
 			    str(lastopened)+' '+str(lastdoor)
-			    SendToXecutor(remote_object,strx)
+#			    SendToXecutor(remote_object,strx)
+			    SendToXecutor(strx)
 #		    print lastcnt, ilastcnt, ctrlid, lastcard, lasttime, lastf1, propcl, lastdoor, lastf2
 		    lastcountedrec = ilastcnt
 # auto add card here:
@@ -1144,6 +1149,7 @@ while b>0:
 		    bNoCon=1
 	    if not cntnoa % 10:	    
 		if verbosity>0: print irdrid, ': No answer', cntnoa, "times"
+		sys.stdout.flush()
 	    break
     time.sleep(.1)
 #    b=b-1

@@ -1,17 +1,19 @@
 #!/usr/bin/python
 from subprocess import call
 import subprocess, time
-from PyQt4.QtCore import *
-import dbus
-import dbus.service
-from dbus.mainloop.qt import DBusQtMainLoop
-import argparse, ConfigParser, os, sys
+from threading import Timer
+#from PyQt4.QtCore import *
+#import dbus
+#import dbus.service
+#from dbus.mainloop.qt import DBusQtMainLoop
+import argparse, ConfigParser, os, sys, select
 import syslog, signal, threading
 
 os.environ["NLS_LANG"] = ".UTF8"
 cfgfilename='gkeep.conf'
 
 verbosity=0
+verbosityd=verbosity
 loglevel=0
 #loglevel 0: log only critical events (base error, ctrl conn. error)
 #loglevel 1: log start-stop events, etc.
@@ -35,8 +37,8 @@ shedulerarglist=[]
 #a=call(["./fw.py", "-g"])
 #print 'ret',a
 DAEMONNAME='doord.py'
-DBUSNAME='org.pop.p'
-DBUSOBJECT='/Popist'
+#DBUSNAME='org.pop.p'
+#DBUSOBJECT='/org/pop/p/Popist'
 
 CONST_SHED_TIMESYNC=3600
 CONST_SHED_UPDATE_CARDS=3601
@@ -179,70 +181,16 @@ def DecodeCommData(w):
     
 #    print 'rec num: ', w[1]
 
-class Cyclee(dbus.service.Object):
-    def __init__(self):
-	try:
-	    busName = dbus.service.BusName(DBUSNAME, bus = dbus.SessionBus())
-	    dbus.service.Object.__init__(self, busName, DBUSOBJECT)
-	except:
-	    os.environ['DBUS_SESSION_BUS_ADDRESS'] = "unix:path=/run/dbus/system_bus_socket"
-	    os.environ["DISPLAY"] = ":0"
-	    busName = dbus.service.BusName(DBUSNAME, bus = dbus.SessionBus())
-	    dbus.service.Object.__init__(self, busName, DBUSOBJECT)
 
-
-    @dbus.service.method(DBUSNAME, in_signature = '', out_signature = '')
-    def exit(self):	
-	global cur,con, bStopped
-	bStopped=1
-	for item in proclist:
-	    try:
-		item.kill()
-		if verbosity>0: print 'kill subproc', item.pid
-	    except:
-		if verbosity>0: print 'cant kill', item.pid
-	if loglevel>0: syslog.syslog('xecutor and daemons stopped by exit method')
-	if bBaseOpen:
-	    cur.close()
-	    con.close()
-	if verbosity>0: print 'exit self'
-	app.quit()
-
-    @dbus.service.method(DBUSNAME, in_signature = 's', out_signature = '')
-    def commd(self, s):
-#...
-#
-#
-#	st=str(s) .strip('][')
-#	st=str(s)
-#	wrd=st.split(',')
-#	wrd = s.split(' ')
-	if verbosity>0: print '-= from daemon recevae =-', s # s, st, wrd #, s.split(',')	
-	if 1:
-#	try:
-	    wrdi=[int(i) for i in s.split(' ')]
-#	    print 'list size:', len(wrdi)
-    	    if wrdi[0] == 13 and len(wrdi) == 12:
-		DecodeCommData(wrdi)
-	    else:
-		if verbosity>0: print('??? Unrecognized protocol')
-	else:
-#	except:
-	    if verbosity>0: print('??? Unrecognized data from daemon')
-#	for item in wrd:
-#	    wrdi.append(int(item))
-#	    try:
-#		print item, 'int=', int(item)
-#	    except:
-#		print 'govno', item
-#		continue
-    
 
 def rundaemon(argd):
 #    argstr = '-s ' + str(argd[1]) + ' -ip ' + str(argd[2]) + ' -p ' + str(argd[3])
 #    print (argd, argstr)
-    p = subprocess.Popen(('./'+DAEMONNAME, '-s='+str(argd[1]), '-ip='+str(argd[2]), '-port='+str(argd[3]), '-v='+str(verbosity), \
-        '-parent='+str(os.getpid()), '-logs='+str(loglevel), '-base='+baseconnstring  ))
+#    cmdlin = 
+#    p = subprocess.Popen(['./'+DAEMONNAME, '-s='+str(argd[1]), '-ip='+str(argd[2]), '-port='+str(argd[3]), '-v='+str(verbosity), \
+#        '-parent='+str(os.getpid()), '-logs='+str(loglevel), '-base='+baseconnstring]  ,bufsize=256)
+    p = subprocess.Popen(['./'+DAEMONNAME, '-s='+str(argd[1]), '-ip='+str(argd[2]), '-port='+str(argd[3]), '-v='+str(verbosityd), \
+        '-parent='+str(os.getpid()), '-logs='+str(loglevel), '-base='+baseconnstring]  , stdout=subprocess.PIPE)
 #    p = subprocess.Popen((DAEMONNAME, '-s='+str(argd[1]),  '-port '+str(argd[3]) ))
     return p
 
@@ -440,6 +388,7 @@ parser=argparse.ArgumentParser()
 parser.add_argument('-stop', action='store_const',const='stop',help='Stop daemons and starter')
 parser.add_argument('-restart', action='store_const',const='restart',help='Restart starter and daemons')
 parser.add_argument('-v', help='Verbos. 1 - on, 0 - off')
+parser.add_argument('-vd', help='Verbosity for doordaemons, 1 - on, 0 - off (default: taken from -v')
 #parser.add_argument('-logs', help='Logs 1 - on, 0 - off')
 #parser.add_argument('stop', help='Stop daemons and starter')
 #parser.add_argument('restart', help='Restart starter and daemons')
@@ -452,62 +401,71 @@ args = parser.parse_args()
 #exit(0)
 
 if args.stop:
-    bus = dbus.SessionBus()
     try:
-	print 'by stop: signal to stop all daemons...'
-	remote_object = bus.get_object(DBUSNAME, DBUSOBJECT)
-	remote_object.exit()
+	print 'by stop: killall...'
+	call (["killall", "xe.py"])
     except:
-	print 'Cant found dbus name. Possible nothing to stop.'
+	print 'Cant call killall utility!'
     exit(0)
 #    cyc.exit()
 
 if args.restart:
-    bus = dbus.SessionBus()
     try:
-	remote_object = bus.get_object(DBUSNAME, DBUSOBJECT)
-	remote_object.exit()
-	print 'by restart: signal to stop all daemons...'
-	time.sleep(2)
-	print '...and start starter again...'
-#	subprocess.call((sys.argv[0], '&'))
-	subprocess.call(sys.argv[0])
+	subprocess.Popen(['./re-xe.py'])
+	print '... Restart initiated ...'
     except:
-	print 'Cant found dbus name. Possible nothing to stop.'
-#	subprocess.call((sys.argv[0], '&'))
-	subprocess.call(sys.argv[0])
+	print 'Can\'t restart: possible no utilite \'re-xe.py\''
     exit(0)
 
 if args.v:
-    verbosity=int(args.v)
+    verbosity=verbosityd=int(args.v)
 #    f = open(os.devnull, 'w')
 #    sys.stdout = f
 #    loglevel=1
+if args.vd:
+    verbosityd=int(args.vd)
 
 
 if loglevel>0: syslog.syslog('xecutor started')
-DBusQtMainLoop(set_as_default = True)
-app = QCoreApplication([])
-cyc = Cyclee()
+#DBusQtMainLoop(set_as_default = True)
+#app = QCoreApplication([])
+#cyc = Cyclee()
 #QTimer.singleShot(1000, cycl)
+
+def gatekeeper_exit():
+    global bStopped, proclist, verbosity,cur,con
+    bStopped=1
+    for item in proclist:
+        try:
+	    item.kill()
+	    if verbosity>0: print 'kill subproc', item.pid
+        except:
+	    if verbosity>0: print 'cant kill', item.pid
+    if loglevel>0: syslog.syslog('xecutor and daemons stopped on exit')
+    if bBaseOpen:
+        cur.close()
+        con.close()
+    if verbosity>0: print 'exit self'
+    exit(0)
+
 
 def sigkillhandler(signum, frame):
 # killall
     if(loglevel>0): syslog.syslog('xecutor received sigterm, daemons will be closed')
-    cyc.exit()
+    gatekeeper_exit()
     
 def siginthandler(signum, frame):
 # ctrl+c
     if(loglevel>0): syslog.syslog('xecutor received ctrl+c, daemons will be closed')
-    cyc.exit()
+    gatekeeper_exit()
 
 # Set the signal handler
 signal.signal(signal.SIGTERM, sigkillhandler)
 signal.signal(signal.SIGINT,  siginthandler)
 # Create a QTimer
-timer = QTimer()
+#timer = QTimer()
 # Connect it to f
-timer.timeout.connect(cycl)
+#timer.timeout.connect(cycl)
 # Call f() every
 
 getini()
@@ -557,6 +515,55 @@ time.sleep(2)
 #print 'kill...'
 #p.kill()
 #
-timer.start(1000)
+#timer.start(1000)
 
-app.exec_()
+bshd=0
+
+def schfunc():
+    global bshd
+#    print '- shed -'
+#    print check_output(["pidof","doord.py"])
+#    for pr in psutil.process_iter():
+#	print pr.name()
+    cycl()
+    bshd=0
+#shd.enter(1,1,schfunc, ())
+#shd.run()
+
+while 1:
+#    print 'xe main loop'
+    bNoSleep=0
+    daem_n=0
+    if not bshd:
+	Timer(1,schfunc, ()).start()
+#	print 'set shed'
+	bshd=1
+    for daemon in proclist:
+	ready=[0]
+	ready = select.select([daemon.stdout], [], [], 0)
+        if ready[0]:
+#       print 'sv ready'
+            line = daemon.stdout.readline()
+    	    if line:
+    		bNoSleep=1
+		if verbosity>0: print '-= from daemon '+str(daem_n)+' recevae =-', line		
+		if 1:
+#		try:
+		    if line.find('doordata') != -1:
+			if verbosity>0: print 'found doordata'
+			line = line.lstrip('doordata')
+			line = line.lstrip()	#remove leadin spaces
+#			if verbosity>0: print 'stripped:', line
+			wrdi=[int(i) for i in line.split(' ')]
+    #	 		    print 'list size:', len(wrdi)
+    			if wrdi[0] == 13 and len(wrdi) == 12:
+			    DecodeCommData(wrdi)
+			else:
+    			    if verbosity>0: print('??? Unrecognized protocol')
+#		    else:
+#	    except:
+#			if verbosity>0: print('??? Unrecognized data from daemon')
+        daem_n += 1
+    if not bNoSleep:
+	time.sleep(0.1)
+#app.exec_()

@@ -528,6 +528,13 @@ def get_ipv4_address():
     patt = re.compile('broadcast\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
 #    patt = re.compile('((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-4]|2[0-5][0-9]|[01]?[0-9][0-9]?))')
     resp = patt.findall(ifc_resp[0])
+#    resp = patt.findall(' inet addr:10.88.8.10  Bcast:10.88.8.255  Mask:255.255.255.0')
+
+    if len(resp) < 1:
+	print 'Not found template \'broadcast\', try \'Bcast\'...'
+        patt = re.compile('Bcast:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+#        resp = patt.findall(' inet addr:10.88.8.10  Bcast:10.88.8.255  Mask:255.255.255.0')
+        resp = patt.findall(ifc_resp[0])
     return resp
 #    for ip in resp:
 #	print ip

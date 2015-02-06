@@ -115,7 +115,7 @@ def applyrdrid():
 
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#sock1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 pre=(0xd,0xd,0,0,0,0,0,0,0,0,0,0)
 #add card: 0d0d, 0d0d, 2010, 2010, 2320 [card]
 #                                                  12                            20 
@@ -485,37 +485,6 @@ def settime():
     pck = struct.pack('28B',*tup1)
     sendtosocket(pck, (host, port))
     
-def seekdevice(seekid):
-    global itcnt
-    send2pre()
-    prepareheader_id(lst_seekctrl2440, seekid)
-    preparecrc(lst_seekctrl2440)
-    tup1=tuple(lst_seekctrl2440)
-#    print tup1
-    pck = struct.pack('20B',*tup1)
-    sendtosocket(pck, (broadhost, port))
-    time.sleep(.2)
-    while 1:
-#        print 'HUe'
-	ready = select.select([sock],[],[],.5)
-	if ready[0]:
-	    data=sock.recv(90)
-#	    print 'HU'
-	    msgid1=struct.unpack('B', data[0:1])
-	    msgid2=struct.unpack('B', data[1:2])
-    	    if msgid1[0] != 0x24 or msgid2[0] != 0x41:
-		print('skip non-2441',msgid1, msgid2)
-    	    else:
-    		cip=struct.unpack('I', data[20:24])
-    		cmask=struct.unpack('I', data[24:28])
-    		crout=struct.unpack('I', data[28:32])
-		ctrlid=struct.unpack('I', data[8:12])
-    		print("found controllar:",ctrlid[0], "ip=", cip[0]&0xFF,cip[0]>>8&0xFF,cip[0]>>16&0xFF,cip[0]>>24&0xFF, 
-    		"subnet mask=",cmask[0]&0xFF,cmask[0]>>8&0xFF,cmask[0]>>16&0xFF,cmask[0]>>24&0xFF,
-    		"def.route=",crout[0]&0xFF,crout[0]>>8&0xFF,crout[0]>>16&0xFF,crout[0]>>24&0xFF)
-	else:
-	    break
-    
 
 def get_ipv4_address():
     """
@@ -542,6 +511,47 @@ def get_ipv4_address():
     return resp
 #    for ip in resp:
 #	print ip
+
+
+def seekdevice(seekid):
+    global itcnt
+    resp = get_ipv4_address()
+    if len(resp) < 1:
+	print 'No broadcast addresses found'
+	exit(0)
+#    send2pre()
+    prepareheader_id(lst_seekctrl2440, seekid)
+    preparecrc(lst_seekctrl2440)
+    tup1=tuple(lst_seekctrl2440)
+#    print tup1
+    pck = struct.pack('20B',*tup1)
+    for braddr in resp:
+	send2broadpre(braddr)
+	sendtosocket(pck, (braddr, port))
+	print 'Seek for broadcast ',braddr
+#    sendtosocket(pck, (broadhost, port))
+#	time.sleep(.2)
+	while 1:
+#            print 'HUe'
+	    ready = select.select([sock],[],[],1)
+#	    print ready
+    	    if ready[0]:
+		data=sock.recv(90)
+#	    	print 'HU'
+    		msgid1=struct.unpack('B', data[0:1])
+		msgid2=struct.unpack('B', data[1:2])
+    		if msgid1[0] != 0x24 or msgid2[0] != 0x41:
+		    print('skip non-2441',msgid1, msgid2)
+    		else:
+    		    cip=struct.unpack('I', data[20:24])
+    		    cmask=struct.unpack('I', data[24:28])
+    		    crout=struct.unpack('I', data[28:32])
+		    ctrlid=struct.unpack('I', data[8:12])
+    		    print("found controllar:",ctrlid[0], "ip=", cip[0]&0xFF,cip[0]>>8&0xFF,cip[0]>>16&0xFF,cip[0]>>24&0xFF, 
+    		    "subnet mask=",cmask[0]&0xFF,cmask[0]>>8&0xFF,cmask[0]>>16&0xFF,cmask[0]>>24&0xFF,
+    		    "def.route=",crout[0]&0xFF,crout[0]>>8&0xFF,crout[0]>>16&0xFF,crout[0]>>24&0xFF)
+	    else:
+		break
 
 
 def changecfg(doordurtime):
@@ -746,6 +756,14 @@ if args.setip:
 	print 'Invalid IP addres, must be x.y.z.a where values are in range 0...255'
     exit(0)
     
+if args.f:
+    if gotparamreaderid:
+	print 'seek by id'
+        seekdevice((gotparamreaderid&0xFF, gotparamreaderid>>8&0xFF, gotparamreaderid>>16&0xFF,gotparamreaderid>>24&0xFF))
+    else:
+	print 'seek for global'
+	seekdevice((0xff,0xff,0xff,0xff))
+    exit(0)
 
 
 if triparam != 2:
@@ -816,12 +834,6 @@ if args.t:
     time.sleep(.2)
     exit(0)
 
-if args.f:
-    if gotparamreaderid:
-        seekdevice((gotparamreaderid&0xFF, gotparamreaderid>>8&0xFF, gotparamreaderid>>16&0xFF,gotparamreaderid>>24&0xFF))
-    else:
-	seekdevice((0xff,0xff,0xff,0xff))
-    exit(0)
 
 if args.e:
     deleteall()

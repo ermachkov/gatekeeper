@@ -522,8 +522,12 @@ def get_ipv4_address():
     Returns IP address(es) of current machine.
     :return:
     """
-    p = subprocess.Popen(["ifconfig"], stdout=subprocess.PIPE)
-    ifc_resp = p.communicate()
+    try:
+	p = subprocess.Popen(["ifconfig"], stdout=subprocess.PIPE)
+	ifc_resp = p.communicate()
+    except:
+	print 'No ifconfig utilite found or no privilege to run ifconfig!'
+	exit(0)
 #    patt = re.compile(r'broadcast\s*\w*\S*:\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
     patt = re.compile('broadcast\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
 #    patt = re.compile('((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-4]|2[0-5][0-9]|[01]?[0-9][0-9]?))')
